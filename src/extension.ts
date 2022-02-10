@@ -10,4 +10,6 @@ export function activate(context: ExtensionContext) {
   FooterStatusBar.initFooterStatusBar();
 }
 // 销毁
-export function deactivate() {}
+export function deactivate() {
+  FooterStatusBar.disposeFMstatusBar();
+}

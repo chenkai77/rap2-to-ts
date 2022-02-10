@@ -1,4 +1,5 @@
 import Axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import { window } from "vscode";
 import { getConfig } from "./getConfig";
 
 const axios: AxiosInstance = Axios.create({
@@ -28,9 +29,14 @@ axios.interceptors.request.use(
 // 后置拦截器（获取到响应时的拦截）
 axios.interceptors.response.use(
   (response) => {
+    if (response.data.errMsg && response.data.isOk === false) {
+      window.showErrorMessage("rap2接口报错,请检查配置文件参数是否过期");
+      return Promise.reject();
+    }
     return response.data;
   },
   (error) => {
+    window.showErrorMessage("rap2接口报错,请检查配置文件参数是否过期");
     return Promise.reject(error);
   }
 );

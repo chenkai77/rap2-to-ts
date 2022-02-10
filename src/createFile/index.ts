@@ -180,7 +180,11 @@ export class CreateFile {
    * @description: 类型声明文件数组形式转对象，便于ts转换
    * @author: depp.chen
    */
-  propertiesConversion(data: IProperties, apiProperties: any[]) {
+  propertiesConversion(
+    data: IProperties,
+    apiProperties: any[],
+    scope?: "request" | "response"
+  ) {
     if (data.properties && data.properties.length) {
       let propertiesObj = Object.create(null);
       data.properties.forEach((e) => {
@@ -209,6 +213,12 @@ export class CreateFile {
       // 避免生成ts interface 可索引的类型
       data.additionalProperties = false;
       data.required = this.getApiRequiredArr(apiProperties);
+      if (scope === "response") {
+        let responseAttr = getConfig().responseAttr;
+        if (responseAttr) {
+          data.required.push(responseAttr);
+        }
+      }
     }
     return data;
   }
@@ -233,7 +243,7 @@ export class CreateFile {
             ? apiInfo.requestProperties
             : apiInfo.responseProperties;
         let resConversion = JSON.parse(
-          JSON.stringify(this.propertiesConversion(res, propertiesData))
+          JSON.stringify(this.propertiesConversion(res, propertiesData, scope))
         );
         let tsTypeName = await zhEnTranslation(item.name);
         let tsTypeData = await jsonSchemaToDts(

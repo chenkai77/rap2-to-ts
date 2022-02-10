@@ -3,7 +3,7 @@
 	"displayName": "rap2-to-ts",
 	"description": "",
 	"publisher": "chen-kai",
-	"version": "0.0.1",
+	"version": "0.0.4",
 	"engines": {
 		"vscode": "^1.63.0"
 	},
@@ -14,6 +14,10 @@
 		"onStartupFinished"
 	],
 	"main": "./out/extension.js",
+	"repository": {
+    "url": "https://github.com/chenkai77/rap2-to-ts"
+  },
+	"icon": "resources/logo.png",
 	"contributes": {},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

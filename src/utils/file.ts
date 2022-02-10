@@ -83,7 +83,7 @@ export function fsCreateDir(path: string): void {
 export function returnDtsTemplates() {
   const templates = fs
     .readFileSync(
-      path.join(state.context!?.extensionPath, "./src/templates/dts.tpl")
+      path.join(state.context!?.extensionPath, "./templates/dts.tpl")
     )
     .toString();
   return templates;
@@ -96,7 +96,7 @@ export function returnDtsTemplates() {
 export function returnDtsContentTemplates() {
   const templates = fs
     .readFileSync(
-      path.join(state.context!?.extensionPath, "./src/templates/dtsContent.tpl")
+      path.join(state.context!?.extensionPath, "./templates/dtsContent.tpl")
     )
     .toString();
   return templates;
@@ -109,7 +109,7 @@ export function returnDtsContentTemplates() {
 export function returnApiItemTemplates() {
   const templates = fs
     .readFileSync(
-      path.join(state.context!?.extensionPath, "./src/templates/apiItem.tpl")
+      path.join(state.context!?.extensionPath, "./templates/apiItem.tpl")
     )
     .toString();
   return templates;
@@ -124,7 +124,7 @@ export function returnDefaultConfig() {
     .readFileSync(
       path.join(
         state.context!?.extensionPath,
-        "./src/templates/defaultRapToTs.config.js"
+        "./templates/defaultRapToTs.config.js"
       )
     )
     .toString();
