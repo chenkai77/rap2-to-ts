@@ -2,10 +2,10 @@
  * @{Name}
  * @{Description}
  */
-export function @{InterfaceName}(data: @{RequestType}):Promise<@{ResponseType}> {
+export function @{InterfaceName}(@{DataQuery}):Promise<@{ResponseType}> {
   return @{RequestKeyword}({
     url: "@{InterfaceUrl}",
     method: "@{InterfaceMethod}",
-    @{QueryParam},
+    @{QueryParam}
   })
 }

@@ -31,6 +31,7 @@ import {
 } from "../utils/publicVariable";
 import { getConfig } from "../utils/getConfig";
 import { ProgressView } from "../progressView/index";
+import { IConfig } from "../types/config";
 
 export class CreateFile {
   // 当前类的实例
@@ -47,6 +48,8 @@ export class CreateFile {
   progress: ProgressView;
   // 上次进度
   lastIncrement: number;
+  // 上次进度
+  config: IConfig;
 
   /**
    * @description: 构造函数
@@ -59,6 +62,7 @@ export class CreateFile {
     this.moduleName = "";
     this.lastIncrement = 0;
     this.progress = { report: () => {}, close: () => {} };
+    this.config = getConfig();
     this.startCreate();
   }
 
@@ -67,17 +71,16 @@ export class CreateFile {
     this.dirName = `${wrapperDirName}/${this.moduleName}`;
     // 如果文件已存在
     if (
-      existsFile(`${this.dirName}/index.ts`) &&
-      existsFile(`${this.dirName}/index.d.ts`)
+      existsFile(`${this.dirName}/index.d.ts`) &&
+      (existsFile(`${this.dirName}/index.ts`) || this.config.onlyTypeFile)
     ) {
-      window.showInformationMessage(
-        `已存在 ${this.repository.label}——${this.module.label} 相关文件，开始对比新增`
-      );
       this.progress = ProgressView.initProgress(
-        `正在对比新增 ${this.repository.label}——${this.module.label} 相关接口数据`
+        `${this.repository.label}——${this.module.label}文件已存在, 正在对比新增相关接口数据`
       );
       await this.noCoverDealWithTypeFile();
-      await this.noCoverDealWithApiFile();
+      if (!this.config.onlyTypeFile) {
+        await this.noCoverDealWithApiFile();
+      }
       this.progress.close();
     } else {
       this.progress = ProgressView.initProgress(
@@ -85,7 +88,9 @@ export class CreateFile {
       );
       fsCreateDir(this.dirName);
       await this.createDeclareTypeFile();
-      await this.createApiFile();
+      if (!this.config.onlyTypeFile) {
+        await this.createApiFile();
+      }
       this.progress.close();
     }
   }
@@ -101,11 +106,22 @@ export class CreateFile {
     total: number,
     scope: "request" | "response" | "api"
   ) {
+    let requestProportion: number;
+    let responseProportion: number;
+    if (this.config.onlyTypeFile) {
+      requestProportion = 50;
+      responseProportion = 50;
+    } else {
+      requestProportion = 33;
+      responseProportion = 33;
+    }
     let increment = 0;
     if (scope === "request") {
-      increment = parseInt(((current / total) * 33).toFixed(0));
+      increment = parseInt(((current / total) * requestProportion).toFixed(0));
     } else if (scope === "response") {
-      increment = 33 + parseInt(((current / total) * 33).toFixed(0));
+      increment =
+        requestProportion +
+        parseInt(((current / total) * responseProportion).toFixed(0));
     } else if (scope === "api") {
       increment = 66 + parseInt(((current / total) * 34).toFixed(0));
     }
@@ -183,7 +199,8 @@ export class CreateFile {
   propertiesConversion(
     data: IProperties,
     apiProperties: any[],
-    scope?: "request" | "response"
+    // scope?: "request" | "response"
+    tsTypeName: string
   ) {
     if (data.properties && data.properties.length) {
       let propertiesObj = Object.create(null);
@@ -197,28 +214,34 @@ export class CreateFile {
           ...propertyTarget,
           ...e,
         };
-        this.propertiesConversion(
-          propertiesObj[e.name],
-          propertyTarget.children
-        );
+        let idName = tsTypeName + this.getInterfaceName(e.name);
+        if (e.properties && e.properties.length) {
+          propertiesObj[e.name].id = idName;
+          this.propertiesConversion(
+            propertiesObj[e.name],
+            propertyTarget.children,
+            idName
+          );
+        }
         if (e.items && e.items.length) {
           propertiesObj[e.name].items.forEach((item: IProperties) => {
-            this.propertiesConversion(item, propertyTarget.children);
+            this.propertiesConversion(item, propertyTarget.children, idName);
           });
           (propertiesObj[e.name].items as unknown) =
             propertiesObj[e.name].items[0];
+          propertiesObj[e.name].items.id = idName;
         }
       });
       data.properties = propertiesObj;
       // 避免生成ts interface 可索引的类型
       data.additionalProperties = false;
       data.required = this.getApiRequiredArr(apiProperties);
-      if (scope === "response") {
-        let responseAttr = getConfig().responseAttr;
-        if (responseAttr) {
-          data.required.push(responseAttr);
-        }
-      }
+      // if (scope === "response") {
+      //   let responseAttr = this.config.responseAttr;
+      //   if (responseAttr) {
+      //     data.required.push(responseAttr);
+      //   }
+      // }
     }
     return data;
   }
@@ -242,14 +265,14 @@ export class CreateFile {
           scope === "request"
             ? apiInfo.requestProperties
             : apiInfo.responseProperties;
-        let resConversion = JSON.parse(
-          JSON.stringify(this.propertiesConversion(res, propertiesData, scope))
-        );
         let tsTypeName = await zhEnTranslation(item.name);
-        let tsTypeData = await jsonSchemaToDts(
-          resConversion,
-          this.getInterfaceName(tsTypeName)
+        tsTypeName = this.getInterfaceName(tsTypeName);
+        let resConversion = JSON.parse(
+          JSON.stringify(
+            this.propertiesConversion(res, propertiesData, tsTypeName)
+          )
         );
+        let tsTypeData = await jsonSchemaToDts(resConversion, tsTypeName);
         allApiTypeData += tsTypeData + "\r\n";
       });
       // 更新进度
@@ -307,12 +330,12 @@ export class CreateFile {
         const item = this.module.interfaces[i];
         let tsTypeName = await zhEnTranslation(item.name);
         const requestReg = new RegExp(
-          `\\s*export\\s*interface\\s*${this.getInterfaceName(
+          `\\s*export\\s*(interface|type)\\s*${this.getInterfaceName(
             tsTypeName
           )}\\s*{[\\s\\S]*}`
         );
         const responseReg = new RegExp(
-          `\\s*export\\s*interface\\s*${this.getInterfaceName(
+          `\\s*export\\s*(interface|type)\\s*${this.getInterfaceName(
             tsTypeName
           )}\\s*{[\\s\\S]*}`
         );
@@ -357,6 +380,30 @@ export class CreateFile {
       let tsTypeName = await zhEnTranslation(item.name);
       let bigHumpTsTypeName = this.getInterfaceName(tsTypeName);
       let apiItemTemplates = returnApiItemTemplates();
+      let method = apiInfo.method.toLocaleLowerCase(); // 请求方法
+      let bodyQueryArr = apiInfo.requestProperties.filter(
+        (e: { pos: number }) => e.pos !== 1
+      );
+      if (bodyQueryArr.length) {
+        let isOptional = bodyQueryArr.every(
+          (e: { required: boolean }) => !e.required
+        );
+        let dataQuery =
+          "data" +
+          (isOptional ? "?:" : ":") +
+          `${bigHumpModuleName}.Request.${bigHumpTsTypeName}`;
+        apiItemTemplates = apiItemTemplates.replace("@{DataQuery}", dataQuery);
+        let queryParam = ["put", "post", "patch"].includes(method)
+          ? "data"
+          : "params:data";
+        apiItemTemplates = apiItemTemplates.replace(
+          "@{QueryParam}",
+          queryParam
+        );
+      } else {
+        apiItemTemplates = apiItemTemplates.replace("@{DataQuery}", "");
+        apiItemTemplates = apiItemTemplates.replace("@{QueryParam}", "");
+      }
       apiItemTemplates = apiItemTemplates.replace("@{Name}", apiInfo.name);
       apiItemTemplates = apiItemTemplates.replace(
         "@{Description}",
@@ -366,19 +413,18 @@ export class CreateFile {
         "@{InterfaceName}",
         tsTypeName
       );
-      apiItemTemplates = apiItemTemplates.replace(
-        "@{RequestType}",
-        `${bigHumpModuleName}.Request.${bigHumpTsTypeName}`
-      );
       let responseType = `${bigHumpModuleName}.Response.${bigHumpTsTypeName}`;
-      let responseAttr = getConfig().responseAttr;
+      let responseAttr = this.config.responseAttr;
       if (responseAttr) {
         // 判断一层属性存不存在
         let target = apiInfo.responseProperties.find(
           (e: { name: string }) => e.name === responseAttr
         );
         if (target) {
-          responseType += `["${responseAttr}"]`;
+          responseType += this.getInterfaceName(responseAttr);
+          if (target.type === "Array") {
+            responseType += "[]";
+          }
         } else {
           responseType = "any"; // 不存在该类型，则视为 any
         }
@@ -395,12 +441,7 @@ export class CreateFile {
         "@{InterfaceUrl}",
         apiInfo.url
       );
-      let method = apiInfo.method.toLocaleLowerCase();
       apiItemTemplates = apiItemTemplates.replace("@{InterfaceMethod}", method);
-      let queryParam = ["put", "post", "patch"].includes(method)
-        ? "data"
-        : "params:data";
-      apiItemTemplates = apiItemTemplates.replace("@{QueryParam}", queryParam);
       allApiData += apiItemTemplates + "\r\n\r\n\r\n";
       this.progressReport(i + 1, interfaces.length, "api");
     }
@@ -411,8 +452,8 @@ export class CreateFile {
    * @description: 生成请求导入代码
    * @author: depp.chen
    */
-  static getImportRequestCode() {
-    let requestFilePath = getConfig().requestFilePath;
+  getImportRequestCode() {
+    let requestFilePath = this.config.requestFilePath;
     return `import ${requestFunName} from "${requestFilePath}"`;
   }
 
@@ -422,7 +463,7 @@ export class CreateFile {
    */
   async createApiFile() {
     let apiData = await this.createApiForModule(this.module.interfaces);
-    apiData = CreateFile.getImportRequestCode() + "\r\n\r\n\r\n" + apiData;
+    apiData = this.getImportRequestCode() + "\r\n\r\n\r\n" + apiData;
     const fileData = formatCode(apiData);
     writeFile(`${this.dirName}/index.ts`, fileData);
   }
@@ -433,7 +474,7 @@ export class CreateFile {
    */
   async noCoverDealWithApiFile() {
     let fileContent = readFile(`${this.dirName}/index.ts`);
-    let requestFilePath = getConfig().requestFilePath;
+    let requestFilePath = this.config.requestFilePath;
     const requestReg = new RegExp(
       `import\\s*request\\s*from\\s*["']{1}${requestFilePath}["']{1}`
     );

@@ -10,8 +10,6 @@ export function jsonSchemaToDts(
   jsonSchema: any,
   name: string
 ): Promise<string> {
-  // 防止导出的对象重名，对子对象进行重命名
-  // recursionRename(jsonSchema.properties, name)
   return new Promise((resolve, reject) => {
     jsonSchema.title = name;
     compile(jsonSchema, name, {
