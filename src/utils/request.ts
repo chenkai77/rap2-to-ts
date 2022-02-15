@@ -3,7 +3,6 @@ import { window } from "vscode";
 import { getConfig } from "./getConfig";
 
 const axios: AxiosInstance = Axios.create({
-  baseURL: getConfig().baseUrl,
   timeout: 20000, // 请求超时 20s
 });
 
@@ -17,9 +16,6 @@ axios.interceptors.request.use(
     const configProps = config || {};
     config.headers = {
       ...config.headers,
-      cookie: `koa.sid=${getConfig().rapKoaSiD}; koa.sid.sig=${
-        getConfig().rapKoaSidSig
-      }`,
     };
     return configProps;
   },

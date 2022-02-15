@@ -28,7 +28,6 @@ export class WindowQuickPick {
    */
   static getOrganizationMenu() {
     return getAllOrganizationList().then((res) => {
-      console.log(res);
       const list = res.data.map((item: any) => {
         return {
           label: item.name,

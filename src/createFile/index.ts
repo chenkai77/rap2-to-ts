@@ -416,6 +416,7 @@ export class CreateFile {
       let responseType = `${bigHumpModuleName}.Response.${bigHumpTsTypeName}`;
       let responseAttr = this.config.responseAttr;
       if (responseAttr) {
+        apiItemTemplates = apiItemTemplates.replace("@{Promise}", "Promise");
         // 判断一层属性存不存在
         let target = apiInfo.responseProperties.find(
           (e: { name: string }) => e.name === responseAttr
@@ -428,6 +429,11 @@ export class CreateFile {
         } else {
           responseType = "any"; // 不存在该类型，则视为 any
         }
+      } else {
+        apiItemTemplates = apiItemTemplates.replace(
+          "@{Promise}",
+          "AxiosPromise"
+        );
       }
       apiItemTemplates = apiItemTemplates.replace(
         "@{ResponseType}",
@@ -454,7 +460,12 @@ export class CreateFile {
    */
   getImportRequestCode() {
     let requestFilePath = this.config.requestFilePath;
-    return `import ${requestFunName} from "${requestFilePath}"`;
+    let requestCodeText = `import ${requestFunName} from "${requestFilePath}"`;
+    if (!this.config.responseAttr) {
+      requestCodeText =
+        `import { AxiosPromise } from "axios"` + "\r\n" + requestCodeText;
+    }
+    return requestCodeText;
   }
 
   /**

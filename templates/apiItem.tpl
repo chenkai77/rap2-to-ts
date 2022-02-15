@@ -2,7 +2,7 @@
  * @{Name}
  * @{Description}
  */
-export function @{InterfaceName}(@{DataQuery}):Promise<@{ResponseType}> {
+export function @{InterfaceName}(@{DataQuery}):@{Promise}<@{ResponseType}> {
   return @{RequestKeyword}({
     url: "@{InterfaceUrl}",
     method: "@{InterfaceMethod}",
