@@ -260,6 +260,13 @@ export class CreateFile {
       const apiInfo = await getApiInfo({ id: item.id }).then((res) => {
         return res.data;
       });
+      if (scope === "request") {
+        allApiTypeData +=
+          "/*" + "\r\n" + `* ${apiInfo.name} 请求类型` + "\r\n" + "*/" + "\r\n";
+      } else {
+        allApiTypeData +=
+          "/*" + "\r\n" + `* ${apiInfo.name} 响应类型` + "\r\n" + "*/" + "\r\n";
+      }
       await getApiJsonSchema({ id: item.id, scope }).then(async (res) => {
         let propertiesData =
           scope === "request"
