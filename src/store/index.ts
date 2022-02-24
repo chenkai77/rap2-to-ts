@@ -5,14 +5,17 @@ import {
   Range,
   Position,
 } from "vscode";
+import { IConfig } from "../types/config";
 
 interface State {
   // 扩展程序激活上下文
   context: ExtensionContext | undefined;
+  config: IConfig;
 }
 
 const state: State = {
   context: undefined,
+  config: {},
 };
 
 const getter = {};

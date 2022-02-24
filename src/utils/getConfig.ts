@@ -15,6 +15,7 @@ import { configFileName } from "./publicVariable";
 import { IConfig } from "../types/config";
 import { returnDefaultConfig } from "./file";
 import fs from "fs";
+import { state } from "../store/index";
 
 /**
  * @description: 获取工作区
@@ -64,6 +65,7 @@ export function getConfig(): IConfig {
       delete require.cache[configPath];
     }
     const configData: IConfig = require(configPath);
+    state.config = configData;
     return configData;
   }
   return {};

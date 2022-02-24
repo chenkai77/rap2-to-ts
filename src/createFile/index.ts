@@ -32,6 +32,7 @@ import {
 import { getConfig } from "../utils/getConfig";
 import { ProgressView } from "../progressView/index";
 import { IConfig } from "../types/config";
+import { state } from "../store/index";
 
 export class CreateFile {
   // 当前类的实例
@@ -48,7 +49,7 @@ export class CreateFile {
   progress: ProgressView;
   // 上次进度
   lastIncrement: number;
-  // 上次进度
+  // 配置数据
   config: IConfig;
 
   /**
@@ -62,7 +63,7 @@ export class CreateFile {
     this.moduleName = "";
     this.lastIncrement = 0;
     this.progress = { report: () => {}, close: () => {} };
-    this.config = getConfig();
+    this.config = state.config;
     this.startCreate();
   }
 
@@ -172,7 +173,9 @@ export class CreateFile {
     if (data && data.length && name) {
       let target = data.find((e) => e.name === name);
       // 删除id, 避免 jsonSchemaToDts 报错
-      delete target.id;
+      if (target && target.id) {
+        delete target.id;
+      }
       return target || {};
     } else {
       return {};

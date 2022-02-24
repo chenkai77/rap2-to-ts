@@ -1,6 +1,7 @@
 import Axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import { window } from "vscode";
 import { getConfig } from "./getConfig";
+import { state } from "../store/index";
 
 const axios: AxiosInstance = Axios.create({
   timeout: 20000, // 请求超时 20s
@@ -16,6 +17,7 @@ axios.interceptors.request.use(
     const configProps = config || {};
     config.headers = {
       ...config.headers,
+      cookie: `koa.sid=${state.config.rapKoaSiD}; koa.sid.sig=${state.config.rapKoaSidSig}`,
     };
     return configProps;
   },
