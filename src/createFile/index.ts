@@ -217,8 +217,8 @@ export class CreateFile {
           ...propertyTarget,
           ...e,
         };
-        let idName = tsTypeName + this.getInterfaceName(e.name);
         if (e.properties && e.properties.length) {
+          let idName = tsTypeName + (e.name?this.getInterfaceName(e.name):'Obj');
           propertiesObj[e.name].id = idName;
           this.propertiesConversion(
             propertiesObj[e.name],
@@ -227,6 +227,7 @@ export class CreateFile {
           );
         }
         if (e.items && e.items.length) {
+          let idName = tsTypeName + (e.name?this.getInterfaceName(e.name):'Items');
           propertiesObj[e.name].items.forEach((item: IProperties) => {
             this.propertiesConversion(item, propertyTarget.children, idName);
           });
