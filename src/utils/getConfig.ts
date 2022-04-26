@@ -61,8 +61,8 @@ export function getConfig(): IConfig {
   let configPath = getConfigPath();
   const isExist = fs.existsSync(configPath);
   if (isExist) {
-    if (require.cache[configPath]) {
-      delete require.cache[configPath];
+    if (require.cache[require.resolve(configPath)]) {
+      delete require.cache[require.resolve(configPath)];
     }
     const configData: IConfig = require(configPath);
     state.config = configData;

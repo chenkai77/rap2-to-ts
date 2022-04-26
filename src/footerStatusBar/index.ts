@@ -11,11 +11,14 @@ import { judgeConfigFile } from "../utils/getConfig";
 
 export class FooterStatusBar {
   static readonly spannedFileCommand = FooterStatusCommandEnum.spannedFile;
+  static readonly spannedJsonCommand = FooterStatusCommandEnum.spannedJson;
 
   // 当前类的实例
   static currentInstance: FooterStatusBar;
   // 底部栏实例
   private readonly statusBar: StatusBarItem;
+
+  // 'notebook-split-cell'
 
   /**
    * @description: 构造函数

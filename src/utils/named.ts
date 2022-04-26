@@ -48,7 +48,8 @@ export function zhEnTranslation(text: string) {
   let conversionText = removeSymbol(text);
   return youDaoZhEnTranslation(conversionText)
     .then((res) => {
-      const text = res.translateResult[0][0].tgt;
+      let text = res.translateResult[0][0].tgt;
+      text = text.replace(/(The)|(That)|(To)/g, ""); // 去掉单词 The，That，To
       return textToHump(text);
     })
     .catch(() => {
