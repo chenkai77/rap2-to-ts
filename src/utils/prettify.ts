@@ -8,3 +8,12 @@ export function formatCode(code: string): string {
     semi: false,
   });
 }
+
+// 格式化代码
+export function formatJsonCode(code: string): string {
+  return prettify(code, {
+    parser: "json",
+    singleQuote: true,
+    semi: false,
+  });
+}
