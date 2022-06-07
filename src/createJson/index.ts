@@ -105,9 +105,9 @@ export class CreateJson {
       let interfaces = this.module.interfaces;
       for (let i = 0; i < interfaces.length; i++) {
         let item = interfaces[i];
-        if (!jsonData[this.module.id][item.id]) {
+        if (!jsonData[this.module.id].children[item.id]) {
           let temporaryVariableName = await zhEnTranslation(item.name);
-          jsonData[this.module.id][item.id] = {
+          jsonData[this.module.id].children[item.id] = {
             name: item.name,
             url: item.url,
             variableName: temporaryVariableName,

@@ -3,7 +3,7 @@
 	"displayName": "rap2-to-ts",
 	"description": "",
 	"publisher": "chen-kai",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"engines": {
 		"vscode": "^1.63.0"
 	},
