@@ -29,6 +29,35 @@ export function getFilePath(filePath: string) {
 }
 
 /**
+ * @description: 根路径写入文件
+ * @author: depp.chen
+ * @param fileName : 文件名
+ * @param fileData : 文件内容
+ */
+export function rootWriteFile(fileName: string, fileData: string) {
+  fs.writeFileSync(getFilePath(fileName), fileData);
+}
+
+/**
+ * @description: 根路径读取文件
+ * @author: depp.chen
+ * @param fileName : 文件名
+ * @param fileData : 文件内容
+ */
+export function rootReadFile(fileName: string) {
+  return fs.readFileSync(getFilePath(fileName)).toString();
+}
+
+/**
+ * @description: 判断根路径文件是否存在
+ * @author: depp.chen
+ * @param fileName : 文件名
+ */
+export function rootExistsFile(fileName: string) {
+  return fs.existsSync(getFilePath(fileName));
+}
+
+/**
  * @description: 获取书面文件生成位置
  * @author: depp.chen
  * @param fileName : 文件名

@@ -7,6 +7,9 @@
 // 配置文件名
 export const configFileName = "rapToTs.config.js";
 
+// JSON文件名
+export const apiJsonFileName = "rapToTs.json";
+
 // 插件生成的文件外层文件夹名
 export const wrapperDirName = "rapToTs";
 

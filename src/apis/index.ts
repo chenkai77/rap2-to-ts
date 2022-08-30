@@ -37,6 +37,7 @@ export function getRepository(repositoryId: number): Promise<any> {
 export function getApiInfo(params: { id: number }): Promise<any> {
   return request.get(state.config.baseUrl + "/interface/get", {
     params,
+    showError: false,
   });
 }
 

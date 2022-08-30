@@ -9,6 +9,8 @@ import {
   IRapInterface,
   IQuickMenu,
   IModule,
+  ModuleInterface,
+  ModuleType,
   IProperties,
 } from "../types/index";
 import { zhEnTranslation, textToHump } from "../utils/named";
@@ -29,7 +31,6 @@ import {
   requestEndTag,
   responseEndTag,
 } from "../utils/publicVariable";
-import { getConfig } from "../utils/getConfig";
 import { ProgressView } from "../progressView/index";
 import { IConfig } from "../types/config";
 import { state } from "../store/index";
@@ -37,10 +38,8 @@ import { state } from "../store/index";
 export class CreateFile {
   // 当前类的实例
   static currentInstance: CreateFile;
-  // 仓库数据
-  repository: IQuickMenu;
   // 模块数据
-  module: IModule;
+  module: ModuleType;
   // 模块英文名
   moduleName: string;
   // 文件夹名称
@@ -56,8 +55,7 @@ export class CreateFile {
    * @description: 构造函数
    * @author: depp.chen
    */
-  private constructor(repository: IQuickMenu, module: IModule) {
-    this.repository = repository;
+  private constructor(module: ModuleType) {
     this.module = module;
     this.dirName = "";
     this.moduleName = "";
@@ -67,8 +65,13 @@ export class CreateFile {
     this.startCreate();
   }
 
+  /**
+   * @description: 开始生成文件
+   * @author: depp.chen
+   */
   async startCreate() {
-    this.moduleName = await zhEnTranslation(this.module.label);
+    // this.moduleName = await zhEnTranslation(this.module.label);
+    this.moduleName = this.module.variableName;
     this.dirName = `${wrapperDirName}/${this.moduleName}`;
     // 如果文件已存在
     if (
@@ -76,7 +79,7 @@ export class CreateFile {
       (existsFile(`${this.dirName}/index.ts`) || this.config.onlyTypeFile)
     ) {
       this.progress = ProgressView.initProgress(
-        `${this.repository.label}——${this.module.label}文件已存在, 正在对比新增相关接口数据`
+        `${this.module.label}文件已存在, 正在对比新增相关接口数据`
       );
       await this.noCoverDealWithTypeFile();
       if (!this.config.onlyTypeFile) {
@@ -85,7 +88,7 @@ export class CreateFile {
       this.progress.close();
     } else {
       this.progress = ProgressView.initProgress(
-        `正在生成 ${this.repository.label}——${this.module.label} 相关接口数据`
+        `正在生成 ${this.module.label} 相关接口数据`
       );
       fsCreateDir(this.dirName);
       await this.createDeclareTypeFile();
@@ -255,42 +258,61 @@ export class CreateFile {
    * @author: depp.chen
    */
   async createTypeForModule(
-    interfaces: IRapInterface[],
+    interfaces: ModuleInterface[],
     scope: "request" | "response"
   ) {
     let allApiTypeData = "";
     for (let i = 0; i < interfaces.length; i++) {
       let item = interfaces[i];
-      const apiInfo = await getApiInfo({ id: item.id }).then((res) => {
-        return res.data;
-      });
-      if (scope === "request") {
-        allApiTypeData +=
-          "/*" + "\r\n" + `* ${apiInfo.name} 请求类型` + "\r\n" + "*/" + "\r\n";
-      } else {
-        allApiTypeData +=
-          "/*" + "\r\n" + `* ${apiInfo.name} 响应类型` + "\r\n" + "*/" + "\r\n";
-      }
-      await getApiJsonSchema({ id: item.id, scope }).then(async (res) => {
-        let propertiesData =
-          scope === "request"
-            ? apiInfo.requestProperties
-            : apiInfo.responseProperties;
-        let tsTypeName = await zhEnTranslation(item.name);
-        tsTypeName = this.getInterfaceName(tsTypeName);
-        let resConversion = JSON.parse(
-          JSON.stringify(
-            this.propertiesConversion(res, propertiesData, tsTypeName)
-          )
+      try {
+        const apiInfo = await getApiInfo({ id: item.id }).then((res) => {
+          return res.data;
+        });
+        if (scope === "request") {
+          allApiTypeData +=
+            "/*" +
+            "\r\n" +
+            `* ${apiInfo.name} 请求类型` +
+            "\r\n" +
+            "*/" +
+            "\r\n";
+        } else {
+          allApiTypeData +=
+            "/*" +
+            "\r\n" +
+            `* ${apiInfo.name} 响应类型` +
+            "\r\n" +
+            "*/" +
+            "\r\n";
+        }
+        await getApiJsonSchema({ id: item.id, scope }).then(async (res) => {
+          let propertiesData =
+            scope === "request"
+              ? apiInfo.requestProperties
+              : apiInfo.responseProperties;
+          // let tsTypeName = await zhEnTranslation(item.name);
+          let tsTypeName = item.variableName;
+          tsTypeName = this.getInterfaceName(tsTypeName);
+          let resConversion = JSON.parse(
+            JSON.stringify(
+              this.propertiesConversion(res, propertiesData, tsTypeName)
+            )
+          );
+          let tsTypeData = await jsonSchemaToDts(resConversion, tsTypeName);
+          allApiTypeData += tsTypeData + "\r\n";
+        });
+        // 更新进度
+        if (scope === "request") {
+          this.progressReport(i + 1, interfaces.length, "request");
+        } else {
+          this.progressReport(i + 1, interfaces.length, "response");
+        }
+      } catch {
+        window.showErrorMessage(
+          `数据生成出错,接口“${item.name}”生成错误，请检查相关数据`
         );
-        let tsTypeData = await jsonSchemaToDts(resConversion, tsTypeName);
-        allApiTypeData += tsTypeData + "\r\n";
-      });
-      // 更新进度
-      if (scope === "request") {
-        this.progressReport(i + 1, interfaces.length, "request");
-      } else {
-        this.progressReport(i + 1, interfaces.length, "response");
+        this.progress.close();
+        break;
       }
     }
     let endTag = scope === "request" ? requestEndTag : responseEndTag;
@@ -339,7 +361,8 @@ export class CreateFile {
       let responseNewAddInterfaces = [];
       for (let i = 0; i < this.module.interfaces.length; i++) {
         const item = this.module.interfaces[i];
-        let tsTypeName = await zhEnTranslation(item.name);
+        // let tsTypeName = await zhEnTranslation(item.name);
+        let tsTypeName = item.variableName;
         const requestReg = new RegExp(
           `\\s*export\\s*(interface|type)\\s*${this.getInterfaceName(
             tsTypeName
@@ -380,7 +403,7 @@ export class CreateFile {
    * @description: 根据模块生成接口代码
    * @author: depp.chen
    */
-  async createApiForModule(interfaces: IRapInterface[]) {
+  async createApiForModule(interfaces: ModuleInterface[]) {
     let allApiData = "";
     for (let i = 0; i < interfaces.length; i++) {
       let item = interfaces[i];
@@ -388,7 +411,8 @@ export class CreateFile {
         return res.data;
       });
       let bigHumpModuleName = this.getBigHumpIName(this.moduleName);
-      let tsTypeName = await zhEnTranslation(item.name);
+      // let tsTypeName = await zhEnTranslation(item.name);
+      let tsTypeName = item.variableName;
       let bigHumpTsTypeName = this.getInterfaceName(tsTypeName);
       let apiItemTemplates = returnApiItemTemplates();
       let method = apiInfo.method.toLocaleLowerCase(); // 请求方法
@@ -507,7 +531,8 @@ export class CreateFile {
     let apiNewAddInterfaces = [];
     for (let i = 0; i < this.module.interfaces.length; i++) {
       const item = this.module.interfaces[i];
-      let tsTypeName = await zhEnTranslation(item.name);
+      // let tsTypeName = await zhEnTranslation(item.name);
+      let tsTypeName = item.variableName;
       const apiReg = new RegExp(
         `\\s*export\\s*function\\s*${tsTypeName}\\s*\\(`
       );
@@ -527,8 +552,8 @@ export class CreateFile {
    * @author: depp.chen
    * @param data : 相关数据
    */
-  static async initCreate(data: { repository: IQuickMenu; module: IModule }) {
-    const { repository, module } = data;
-    CreateFile.currentInstance = new CreateFile(repository, module);
+  static async initCreate(data: { module: ModuleType }) {
+    const { module } = data;
+    CreateFile.currentInstance = new CreateFile(module);
   }
 }

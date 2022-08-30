@@ -7,6 +7,8 @@
 export interface IRapInterface {
   id: number;
   name: string;
+  url: string;
+  description: string;
 }
 
 export interface IQuickMenu {
@@ -17,6 +19,7 @@ export interface IQuickMenu {
 export interface IModule {
   id: number;
   label: string;
+  variableName?: string;
   interfaces: IRapInterface[];
 }
 
@@ -27,3 +30,21 @@ export interface IProperties {
   properties?: IProperties[];
   [k: string]: any;
 }
+
+export interface IJsonDataItem {
+  name: string;
+  variableName: string;
+  description?: string;
+  url?: string;
+  children?: IJsonData;
+}
+export interface IJsonData {
+  [k: string | number]: IJsonDataItem;
+}
+
+export type ModuleInterface = IRapInterface & { variableName: string };
+
+export type ModuleType = IModule & {
+  variableName: string;
+  interfaces: ModuleInterface[];
+};

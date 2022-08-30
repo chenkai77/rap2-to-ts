@@ -9,8 +9,11 @@ import {
   getAllRepositoryList,
   getRepository,
 } from "../apis";
-import { IQuickMenu, IModule } from "../types/index";
+import { IQuickMenu, IModule, ModuleType } from "../types/index";
 import { CreateFile } from "../createFile";
+import { CreateJson } from "../createJson";
+import { rootExistsFile, rootReadFile } from "../utils/file";
+import { apiJsonFileName } from "../utils/publicVariable";
 
 export class WindowQuickPick {
   // 当前类的实例
@@ -100,16 +103,53 @@ export class WindowQuickPick {
         let modules = await WindowQuickPick.getRepositoryModule(
           repositoryRes.id
         );
+
         let modulesRes = await window.showQuickPick<IModule>(modules, {
           placeHolder: "请选择模块",
         });
         if (modulesRes) {
-          CreateFile.initCreate({
-            repository: repositoryRes,
+          CreateJson.initCreate({
             module: modulesRes,
           });
         }
       }
+    }
+  }
+
+  /**
+   * @description: 为创建接口及类型文件新开选择窗口
+   * @author: depp.chen
+   */
+  static async showQuickPickToCreateFile() {
+    let fileContent = rootReadFile(apiJsonFileName);
+    let jsonData = JSON.parse(fileContent);
+    let modules: ModuleType[] = Object.keys(jsonData).map((key) => {
+      let item = jsonData[key];
+      let interfaces = [];
+      if (item.children && Object.keys(item.children).length) {
+        interfaces = Object.keys(item.children).map((childKey) => ({
+          id: Number(childKey),
+          ...item.children[childKey],
+        }));
+      }
+      return {
+        id: Number(key),
+        label: item.name,
+        variableName: item.variableName,
+        interfaces,
+      };
+    });
+    if (modules && modules.length) {
+      let modulesRes = await window.showQuickPick<ModuleType>(modules, {
+        placeHolder: "请选择模块",
+      });
+      if (modulesRes) {
+        CreateFile.initCreate({
+          module: modulesRes,
+        });
+      }
+    } else {
+      window.showErrorMessage("读取JSON数据失败");
     }
   }
 }

@@ -8,4 +8,6 @@
 export enum FooterStatusCommandEnum {
   // 生成声明及接口文件的命令ID
   spannedFile = "extension.spannedFile",
+  // 生成映射文件命令ID
+  spannedJson = "extension.spannedJson",
 }

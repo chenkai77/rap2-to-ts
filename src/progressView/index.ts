@@ -7,8 +7,6 @@ import { window, ProgressLocation, Progress } from "vscode";
 import { FooterStatusCommandEnum } from "../enums/index";
 
 export class ProgressView {
-  static readonly spannedFileCommand = FooterStatusCommandEnum.spannedFile;
-
   // 当前类的实例
   static currentInstance: ProgressView;
   // 底部栏实例

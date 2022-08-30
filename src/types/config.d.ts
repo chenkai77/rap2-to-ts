@@ -18,4 +18,5 @@ export interface IConfig {
   onlyTypeFile?: boolean;
   // 返回体属性，有时会封装请求方法，处理统一请求返回泛文，只需返回接口文档中返回格式的某个属性
   responseAttr?: string;
+  idCustomApiName?: Record<string, any>;
 }

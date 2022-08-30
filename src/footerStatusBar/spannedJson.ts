@@ -9,11 +9,11 @@ import { commandIsRegister } from "../utils/command";
 import { WindowQuickPick } from "../windowQuickPick";
 import { judgeConfigFile } from "../utils/getConfig";
 
-export class FooterStatusBar {
-  static readonly spannedFileCommand = FooterStatusCommandEnum.spannedFile;
+export class SpannedJsonFooterStatusBar {
+  static readonly spannedJsonCommand = FooterStatusCommandEnum.spannedJson;
 
   // 当前类的实例
-  static currentInstance: FooterStatusBar;
+  static currentInstance: SpannedJsonFooterStatusBar;
   // 底部栏实例
   private readonly statusBar: StatusBarItem;
 
@@ -23,8 +23,8 @@ export class FooterStatusBar {
    */
   private constructor(statusBar: StatusBarItem) {
     this.statusBar = statusBar;
-    this.statusBar.command = FooterStatusBar.spannedFileCommand;
-    this.statusBar.text = `$(notebook-template) rap2ts`;
+    this.statusBar.command = SpannedJsonFooterStatusBar.spannedJsonCommand;
+    this.statusBar.text = `$(notebook-split-cell) rap2Json`;
     this.registerFooterStatusBar();
     this.statusBar.show();
   }
@@ -35,7 +35,9 @@ export class FooterStatusBar {
    */
   static async initFooterStatusBar() {
     let statusBar = window.createStatusBarItem(StatusBarAlignment.Left);
-    FooterStatusBar.currentInstance = new FooterStatusBar(statusBar);
+    SpannedJsonFooterStatusBar.currentInstance = new SpannedJsonFooterStatusBar(
+      statusBar
+    );
   }
 
   /**
@@ -44,19 +46,22 @@ export class FooterStatusBar {
    */
   private async registerFooterStatusBar() {
     let isRegister = await commandIsRegister(
-      FooterStatusBar.spannedFileCommand
+      SpannedJsonFooterStatusBar.spannedJsonCommand
     );
     // 如果已经注册了command Key则不再进行注册
     if (isRegister) {
       return;
     }
-    commands.registerCommand(FooterStatusBar.spannedFileCommand, async () => {
-      // 先判断配置文件是否存在
-      let target = judgeConfigFile();
-      if (target) {
-        WindowQuickPick.showQuickPick();
+    commands.registerCommand(
+      SpannedJsonFooterStatusBar.spannedJsonCommand,
+      async () => {
+        // 先判断配置文件是否存在
+        let target = judgeConfigFile();
+        if (target) {
+          WindowQuickPick.showQuickPick();
+        }
       }
-    });
+    );
   }
 
   /**
@@ -64,6 +69,6 @@ export class FooterStatusBar {
    * @author: depp.chen
    */
   public static disposeFMstatusBar() {
-    FooterStatusBar.currentInstance?.statusBar?.dispose();
+    SpannedJsonFooterStatusBar.currentInstance?.statusBar?.dispose();
   }
 }
